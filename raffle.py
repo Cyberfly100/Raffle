@@ -11,7 +11,7 @@ class NameRaffle_backend:
         self.exclude_list = []
         self.pick_hist = []
         self.winner = None
-        self.savepath = Path.cwd() / 'raffle_memory.txt'
+        self.savepath = Path(__file__).parent / 'raffle_memory.txt'
 
     def save_data(self) -> int:
         success = -1

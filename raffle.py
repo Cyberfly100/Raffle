@@ -4,6 +4,8 @@ import tkinter as tk
 from ctypes import windll
 import json
 from pathlib import Path
+import logging
+logging.basicConfig(filename=Path(__file__).parent / 'raffle.log', level=logging.INFO)
 
 class NameRaffle_backend:
     def __init__(self) -> None:
@@ -13,16 +15,10 @@ class NameRaffle_backend:
         self.winner = None
         self.savepath = Path(__file__).parent / 'raffle_memory.txt'
 
-    def save_data(self) -> int:
-        success = -1
-        try:
-            data = json.dumps({'score':self.score, 'history':self.pick_hist})
-            with open(self.savepath, 'w') as file:
-                file.write(data)
-            success = 1
-        except Exception as err:
-            print(err)
-        return success
+    def save_data(self) -> None:
+        data = json.dumps({'score':self.score, 'history':self.pick_hist})
+        with open(self.savepath, 'w') as file:
+            file.write(data)
 
     def load_data(self) -> int:
         success = -1
@@ -36,7 +32,7 @@ class NameRaffle_backend:
 
     def add_name(self,name:str) -> dict:
         if name.lower() in self.score:
-            print(f'{name.capitalize()} is already participating.')
+            logging.info(f'{name.capitalize()} is already participating.')
         else:
             self.score[name.lower()] = min(self.score.values())
         return self.score
@@ -45,7 +41,7 @@ class NameRaffle_backend:
         if name.lower() in self.score:
             _ = self.score.pop(name.lower())
         else:
-            print(f'Could not remove {name.capitalize()}. Contestant not in list.')
+            logging.info(f'Could not remove {name.capitalize()}. Contestant not in list.')
         return self.score
 
     def pick_winner(self) -> str:
@@ -175,7 +171,7 @@ class RaffleGUI:
         self.label_text.set(f'The winner is {winner}.')
         if self.popup_ref:
             self.popup_ref.refresh_popup()
-        print(winner)
+        logging.info(f'The winner is {winner}.')
     
     def create_suspense_with_dots(self, time) -> None:
         step = int(time/9)
@@ -199,7 +195,7 @@ class RaffleGUI:
             self.popup_ref.refresh_popup()
         self.label_text.set(info)
         score = self.backend.score
-        [print(f'{name.capitalize()}: {count}') for name, count in score.items()]
+        [logging.debug(f'{name.capitalize()}: {count}') for name, count in score.items()]
 
 class ConfigPopup():
     def __init__(self, supernamespace, master) -> None:

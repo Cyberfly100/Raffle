@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # VS Code environment
-.code-workspace
+*.code-workspace
 
 # Config and log files
 raffle_memory.txt

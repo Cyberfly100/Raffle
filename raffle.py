@@ -7,7 +7,7 @@ from pathlib import Path
 
 class NameRaffle_backend:
     def __init__(self) -> None:
-        self.score = {f'contestant {i}':0 for i in range(28)}
+        self.score = {f'contestant {i+1}':0 for i in range(12)}
         self.exclude_list = []
         self.pick_hist = []
         self.winner = None
@@ -58,7 +58,7 @@ class NameRaffle_backend:
 
     def undo_pick(self) -> str:
         if not self.pick_hist:
-            info = 'Cannot undo any further'
+            info = 'Cannot undo any further.'
         else:
             last_pick = self.pick_hist.pop()
             self.score[last_pick]-=1
@@ -96,7 +96,7 @@ class RaffleGUI:
         self._offsetx = 200
         self._offsety = 200
         self.padding = 20
-        self.width = 250
+        self.width = 280
         self.height = 110
 
         self.master.configure(background='white')
@@ -199,7 +199,7 @@ class RaffleGUI:
             self.popup_ref.refresh_popup()
         self.label_text.set(info)
         score = self.backend.score
-        [print(f'{name.capitalize()}: {value}') for name, value in score.items()]
+        [print(f'{name.capitalize()}: {count}') for name, count in score.items()]
 
 class ConfigPopup():
     def __init__(self, supernamespace, master) -> None:
@@ -222,7 +222,7 @@ class ConfigPopup():
         self.popup.overrideredirect(True)# remove title bar.
         self.popup.after(10, lambda: self.set_appwindow())# recover task bar icon.
 
-        self._offsetx = 400
+        self._offsetx = 500
         self._offsety = 200
         self.padding = 20
         self.width = 200
@@ -259,16 +259,16 @@ class ConfigPopup():
 
     def makeform(self,score:dict) -> dict:
         entries = {}
-        for key,value in score.items():
-            row = tk.Frame(self.table, name=f'{key}')
-            name = tk.Entry(row, borderwidth=0)
-            score = tk.Entry(row, borderwidth=0)
-            name.insert(0,key.capitalize())
-            score.insert(0, value)
+        for name,count in score.items():
+            row = tk.Frame(self.table, name=name)
+            name_cell = tk.Entry(row, borderwidth=0)
+            score_cell = tk.Entry(row, borderwidth=0)
+            name_cell.insert(0,name.capitalize())
+            score_cell.insert(0, count)
             row.pack(side='top', fill='x', padx=5, pady=5)
-            name.pack(side='left')
-            score.pack(side='right', expand=1, fill='x')
-            entries[name] = score
+            name_cell.pack(side='left')
+            score_cell.pack(side='right', expand=1, fill='x')
+            entries[name_cell] = score_cell
         return entries
 
     def button_setup(self) -> None:
@@ -292,7 +292,7 @@ class ConfigPopup():
     
     def scores_from_ref(self) -> dict:
         ref = self.modified_score_ref
-        modified_scores = {key.get().lower():int(value.get()) for key, value in ref.items()}
+        modified_scores = {name.get().lower():int(count.get()) for name, count in ref.items()}
         return modified_scores
 
     def get_changes_from_table(self) -> None:

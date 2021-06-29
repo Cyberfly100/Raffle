@@ -5,11 +5,11 @@ from ctypes import windll
 import json
 from pathlib import Path
 import logging
-logging.basicConfig(filename=Path(__file__).parent / 'raffle.log', level=logging.INFO)
+logging.basicConfig(filename=Path(__file__).parent / 'raffle.log', level=logging.DEBUG)
 
 class NameRaffle_backend:
     def __init__(self) -> None:
-        self.score = {f'contestant {i+1}':0 for i in range(12)}
+        self.score = {f'contestant {i+1}':{'count':0, 'exclude':False} for i in range(12)}
         self.exclude_list = []
         self.pick_hist = []
         self.winner = None
@@ -25,7 +25,12 @@ class NameRaffle_backend:
         if self.savepath.exists():
             with open(self.savepath, 'r') as file:
                 data = json.loads(file.read())
-            self.score = data['score']
+            score = data['score']
+            # convert strings back to correct datatype
+            for name in score:
+                score[name]['count'] = int(score[name]['count'])
+                score[name]['exclude'] = bool(int(score[name]['exclude']))
+            self.score = score
             self.pick_hist = data['history']
             success = 1
         return success
@@ -34,7 +39,7 @@ class NameRaffle_backend:
         if name.lower() in self.score:
             logging.info(f'{name.capitalize()} is already participating.')
         else:
-            self.score[name.lower()] = min(self.score.values())
+            self.score[name.lower()] = {'count':min([details['count'] for details in self.score.values()]), 'exclude':False}
         return self.score
 
     def remove_name(self,name:str) -> dict:
@@ -45,11 +50,14 @@ class NameRaffle_backend:
         return self.score
 
     def pick_winner(self) -> str:
-        min_count = min([count for name,count in self.score.items() if name not in self.exclude_list])
-        valid_picks = [name for name,count in self.score.items() if count==min_count and name not in self.exclude_list]
+        logging.debug(f'name: {[name for name in self.score]}')
+        logging.debug(f'count: {[details["count"] for details in self.score.values()]}')
+        logging.debug(f'exclude: {[details["exclude"] for details in self.score.values()]}')
+        min_count = min([details['count'] for details in self.score.values() if not details['exclude']])
+        valid_picks = [name for name,details in self.score.items() if details['count']==min_count and not details['exclude']]
         self.winner = choice(valid_picks)
         self.pick_hist.append(self.winner)
-        self.score[self.winner]+=1
+        self.score[self.winner]['count']+=1
         return self.winner.capitalize()
 
     def undo_pick(self) -> str:
@@ -57,13 +65,13 @@ class NameRaffle_backend:
             info = 'Cannot undo any further.'
         else:
             last_pick = self.pick_hist.pop()
-            self.score[last_pick]-=1
+            self.score[last_pick]['count']-=1
             info = f'Removed last entry: {last_pick.capitalize()}'
         return info
 
     def reset_score(self)->dict:
         for key in self.score:
-            self.score[key]=0
+            self.score[key]['count']=0
         self.pick_hist = []
         return self.score
 
@@ -162,16 +170,20 @@ class RaffleGUI:
         self.master.after(10, lambda: self.master.wm_deiconify())
 
     def draw(self) -> None:
+        if self.popup_ref:
+            self.popup_ref.get_changes_from_table()
         time = 2250
         self.create_suspense_with_names(time)
+        if self.popup_ref:
+            self.popup_ref.get_changes_from_table()
         self.master.after(time, self.pick_winner)
 
     def pick_winner(self) -> str:
         winner = self.backend.pick_winner()
-        self.label_text.set(f'The winner is {winner}.')
+        self.label_text.set(f'The winner is {winner}!')
         if self.popup_ref:
             self.popup_ref.refresh_popup()
-        logging.info(f'The winner is {winner}.')
+        logging.info(f'The winner is {winner}!')
     
     def create_suspense_with_dots(self, time) -> None:
         step = int(time/9)
@@ -195,7 +207,7 @@ class RaffleGUI:
             self.popup_ref.refresh_popup()
         self.label_text.set(info)
         score = self.backend.score
-        [logging.debug(f'{name.capitalize()}: {count}') for name, count in score.items()]
+        [logging.debug(f'{name.capitalize()}: {details["count"]}') for name, details in score.items()]
 
 class ConfigPopup():
     def __init__(self, supernamespace, master) -> None:
@@ -255,16 +267,19 @@ class ConfigPopup():
 
     def makeform(self,score:dict) -> dict:
         entries = {}
-        for name,count in score.items():
+        for name,details in score.items():
             row = tk.Frame(self.table, name=name)
             name_cell = tk.Entry(row, borderwidth=0)
-            score_cell = tk.Entry(row, borderwidth=0)
+            count_cell = tk.Entry(row, borderwidth=0)
+            exclude_cell = tk.Entry(row, borderwidth=0)
             name_cell.insert(0,name.capitalize())
-            score_cell.insert(0, count)
+            count_cell.insert(0, details['count'])
+            exclude_cell.insert(0, details['exclude'])
             row.pack(side='top', fill='x', padx=5, pady=5)
             name_cell.pack(side='left')
-            score_cell.pack(side='right', expand=1, fill='x')
-            entries[name_cell] = score_cell
+            count_cell.pack(side='left')
+            exclude_cell.pack(side='right', expand=1, fill='x')
+            entries[name_cell] = {'count':count_cell, 'exclude':exclude_cell}
         return entries
 
     def button_setup(self) -> None:
@@ -288,7 +303,7 @@ class ConfigPopup():
     
     def scores_from_ref(self) -> dict:
         ref = self.modified_score_ref
-        modified_scores = {name.get().lower():int(count.get()) for name, count in ref.items()}
+        modified_scores = {name.get().lower():{'count':int(details['count'].get()), 'exclude':bool(int(details['exclude'].get()))} for name, details in ref.items()}
         return modified_scores
 
     def get_changes_from_table(self) -> None:
@@ -333,6 +348,7 @@ class ConfigPopup():
             pass
 
     def add_line(self) -> None:
+        self.get_changes_from_table()
         self.supernamespace.backend.add_name('----')
         self.refresh_popup()
 
@@ -343,8 +359,8 @@ class ConfigPopup():
         self.refresh_popup()
 
     def remove_highlighted_name(self) -> None:
-        self.get_changes_from_table()
         highlighted_name = self.popup.focus_get().master.winfo_name()
+        self.get_changes_from_table()
         if highlighted_name in self.supernamespace.backend.score.keys():
             self.supernamespace.backend.remove_name(highlighted_name)
         self.refresh_popup()

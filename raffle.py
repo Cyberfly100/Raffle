@@ -16,20 +16,15 @@ class NameRaffle_backend:
         self.savepath = Path(__file__).parent / 'raffle_memory.txt'
 
     def save_data(self) -> None:
-        data = json.dumps({'score':self.score, 'history':self.pick_hist})
         with open(self.savepath, 'w') as file:
-            file.write(data)
+            json.dump({'score':self.score, 'history':self.pick_hist}, file)
 
     def load_data(self) -> int:
         success = -1
         if self.savepath.exists():
             with open(self.savepath, 'r') as file:
-                data = json.loads(file.read())
+                data = json.load(file)
             score = data['score']
-            # convert strings back to correct datatype
-            for name in score:
-                score[name]['count'] = int(score[name]['count'])
-                score[name]['exclude'] = bool(int(score[name]['exclude']))
             self.score = score
             self.pick_hist = data['history']
             success = 1
@@ -141,7 +136,8 @@ class RaffleGUI:
         # self.close_button.place(bordermode=tk.OUTSIDE, height=20, width=40, x=self.width/2-20, y=self.height-20)
 
     def popup(self) -> None:
-        self.popup_ref = ConfigPopup(self,self.master)
+        if not self.popup_ref:
+            self.popup_ref = ConfigPopup(self,self.master)
 
     def quit(self) -> None:
         self.backend.save_data()
@@ -317,6 +313,7 @@ class ConfigPopup():
     def quit(self) -> None:
         self.get_changes_from_table()#TODO: make save button to avoid overwriting of score during suspese
         self.popup.destroy()# use destroy since we want to keep the main window.
+        self.supernamespace.popup_ref = None
 
     def dragwin(self,event) -> None:
         x = self.popup.winfo_pointerx() - self.popup._offsetx

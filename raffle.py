@@ -246,6 +246,7 @@ class ConfigPopup():
         self.wrapper = tk.LabelFrame(self.popup, background='white', borderwidth=0)
         self.scrollbox = tk.Canvas(self.wrapper, background='white', borderwidth=0, highlightthickness=0, width=150)
         self.scrollbox.pack(side='left', fill='y')
+        self.scrollbox.bind_all("<MouseWheel>", self._on_mousewheel)
         self.yscroll = tk.Scrollbar(self.wrapper, orient='vertical', command=self.scrollbox.yview)
         self.yscroll.pack(side='right', fill='y')
         self.scrollbox.configure(yscrollcommand=self.yscroll.set)
@@ -255,6 +256,9 @@ class ConfigPopup():
         self.wrapper.pack(fill='x', expand='yes', padx=0, pady=20)
         # self.table.place(bordermode='outside', height=300, width=self.width-self.padding, x=self.padding, y=20)
         self.modified_score_ref = self.makeform(self.supernamespace.backend.score)
+
+    def _on_mousewheel(self, event):
+        self.scrollbox.yview_scroll(int(-1*(event.delta/120)), "units")
 
     def onCanvasConfigure(self, event):
         self.scrollbox.config(scrollregion=self.scrollbox.bbox('all'))

@@ -139,6 +139,24 @@ class RaffleGUI:
         self.label.bind("<Button-1>", self.on_click_window)
         self.label.bind("<B1-Motion>", self.on_drag_window)
 
+    @staticmethod
+    def _button(owner, command, image=None, background="white") -> tk.Button:
+        button = tk.Button(
+            owner,
+            relief="flat",
+            highlightthickness=0,
+            bd=0,
+            background=background,
+            activebackground="white",
+            command=command,
+        )
+        if image==None:
+            button.config(text="Close")
+        else:
+            button.config(image=image)
+            button.image=image,
+        return button
+
     def button_setup(self) -> None:
         raffle_img = tk.PhotoImage(file=Path(__file__).parent / "pics/pick_winner.png")
         undo_img = tk.PhotoImage(file=Path(__file__).parent / "pics/undo.png")
@@ -147,62 +165,40 @@ class RaffleGUI:
         self.button_row = tk.Frame(self.master, background="white")
         self.button_row.pack(side="top", pady=10)
 
-        self.draw_button = tk.Button(
-            self.button_row,
+        self.draw_button = self._button(
+            owner = self.button_row,
             image=raffle_img,
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
-            command=self.draw,
+            command=self.draw
         )
-        self.draw_button.image = raffle_img
-        self.draw_button.pack(side="left", padx=(20, int((self.width - 160) / 4)))
-        # self.draw_button.place(bordermode=tk.OUTSIDE, height=40, width=40, x=self.padding, y=self.padding+10)
 
-        self.undo_button = tk.Button(
-            self.button_row,
+        self.undo_button = self._button(
+            owner = self.button_row,
             image=undo_img,
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
-            command=self.undo,
+            command=self.undo
         )
-        self.undo_button.image = undo_img
-        self.undo_button.pack(
-            side="left", padx=(int((self.width - 160) / 4), int((self.width - 160) / 4))
-        )
-        # self.undo_button.place(bordermode=tk.OUTSIDE, height=40, width=40, x=self.padding+50, y=self.padding+10)
 
-        self.popup_button = tk.Button(
-            self.button_row,
+        self.popup_button = self._button(
+            owner = self.button_row,
             image=config_img,
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
-            command=self.popup,
+            command=self.popup
         )
-        self.popup_button.image = config_img
-        self.popup_button.pack(side="left", padx=(int((self.width - 160) / 4), 20))
-        # self.popup_button.place(bordermode=tk.OUTSIDE, height=40, width=40, x=self.padding+100, y=self.padding+10)
 
-        self.close_button = tk.Button(
-            self.master,
-            text="Close",
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
+        self.close_button = self._button(
+            owner = self.master,
             command=self.quit,
         )
+
+        left_button_xpadding = (20, int((self.width - 160) / 4))
+        middle_button_xpadding = (int((self.width - 160) / 4), int((self.width - 160) / 4))
+        right_button_xpadding = (int((self.width - 160) / 4), 20)
+        
+        xpaddings = [left_button_xpadding, middle_button_xpadding, right_button_xpadding]
+        buttons = [self.undo_button, self.draw_button, self.popup_button]
+
+        for button, xpadding in zip(buttons, xpaddings):
+            button.pack(side="left", padx=xpadding)
+            
         self.close_button.pack(side="top")
-        # self.close_button.place(bordermode=tk.OUTSIDE, height=20, width=40, x=self.width/2-20, y=self.height-20)
 
     def popup(self) -> None:
         if not self.popup_ref:
@@ -310,7 +306,7 @@ class ConfigPopup:
         self._offsetx = 500
         self._offsety = 200
         self.padding = 20
-        self.width = 180
+        self.width = 200
         self.height = 300
 
         self.popup.configure(background="white")
@@ -347,7 +343,6 @@ class ConfigPopup:
             (0, 0), window=self.table, anchor="nw"
         )
         self.wrapper.pack(fill="x", expand="yes", padx=0, pady=20)
-        # self.table.place(bordermode='outside', height=300, width=self.width-self.padding, x=self.padding, y=20)
         self.modified_score_ref = self.makeform(self.supernamespace.backend.score)
 
     def _on_mousewheel(self, event):
@@ -364,7 +359,6 @@ class ConfigPopup:
             row = tk.Frame(self.table, name=name, background="white")
             name_cell = tk.Entry(row, borderwidth=0)
             count_cell = tk.Entry(row, borderwidth=0, width=5)
-            # exclude_cell = tk.Entry(row, borderwidth=0)
             exclude_cell = tk.Checkbutton(
                 row, onvalue=0, offvalue=1, background="white"
             )
@@ -373,7 +367,6 @@ class ConfigPopup:
             exclude_cell.config(variable=exclude_cell.var)
             name_cell.insert(0, name.capitalize())
             count_cell.insert(0, details["count"])
-            # exclude_cell.insert(0, details["exclude"])
             row.pack(side="top", fill="x", padx=5, pady=0)
             name_cell.pack(side="left")
             count_cell.pack(side="left")
@@ -384,56 +377,51 @@ class ConfigPopup:
             }
         return entries
 
+    @staticmethod
+    def _button(owner, command, image=None, background="white") -> tk.Button:
+        button = tk.Button(
+            owner,
+            relief="flat",
+            highlightthickness=0,
+            bd=0,
+            background=background,
+            activebackground="white",
+            command=command,
+        )
+        if image==None:
+            button.config(text="Close")
+        else:
+            button.config(image=image)
+            button.image=image,
+        return button
+
     def button_setup(self) -> None:
         plus_img = tk.PhotoImage(file=Path(__file__).parent / "pics/plus.png")
         minus_img = tk.PhotoImage(file=Path(__file__).parent / "pics/minus.png")
-
         self.button_row = tk.Frame(self.popup, background="white")
-
-        self.add_button = tk.Button(
-            self.button_row,
-            image=plus_img,
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
-            command=self.add_line,
+        self.add_button = self._button(
+            owner = self.button_row,
+            image = plus_img,
+            command = self.add_line
         )
-        self.add_button.image = plus_img
+        self.remove_button = self._button(
+            owner = self.button_row,
+            image = minus_img,
+            command=self.remove_highlighted_name
+        )
+        self.close_button = self._button(
+            owner = self.popup,
+            command = self.quit
+        )
         self.add_button.pack(
             side="left", padx=(0, 50)
-        )  # place(bordermode=tk.OUTSIDE, height=40, width=40, x=self.padding, y=self.height-self.padding-40)        self.button_spacer.pack(side='right', fill='x', expand='yes')
-
-        self.remove_button = tk.Button(
-            self.button_row,
-            image=minus_img,
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
-            command=self.remove_highlighted_name,
         )
-        self.remove_button.image = minus_img
         self.remove_button.pack(
             side="right", padx=(50, 0)
-        )  # place(bordermode=tk.OUTSIDE, height=40, width=40, x=self.width-self.padding-40, y=self.height-self.padding-40)
-
-        self.close_button = tk.Button(
-            self.popup,
-            text="Close",
-            relief="flat",
-            highlightthickness=0,
-            bd=0,
-            background="white",
-            activebackground="white",
-            command=self.quit,
         )
         self.close_button.pack(
             side="bottom"
-        )  # place(bordermode=tk.OUTSIDE, height=20, width=40, x=self.width/2-20, y=self.height-20)
-
+        )
         self.button_row.pack(side="bottom")
 
     def score_from_ref(self) -> dict:
@@ -465,7 +453,7 @@ class ConfigPopup:
             self.supernamespace.backend.pick_hist = []
 
     def quit(self) -> None:
-        self.get_changes_from_table()  # TODO: make save button to avoid overwriting of score during suspese
+        self.get_changes_from_table()  # TODO: make save button to avoid overwriting of score during suspense
         self.popup.destroy()  # use destroy since we want to keep the main window.
         self.supernamespace.popup_ref = None
 
@@ -527,7 +515,5 @@ def main():
     root.mainloop()
 
 
-# %%
 if __name__ == "__main__":
     main()
-# %%

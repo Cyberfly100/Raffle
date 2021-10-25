@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import logging
 
-logging.basicConfig(filename=Path(__file__).parent / "raffle.log", level=logging.DEBUG)
+logging.basicConfig(filename=Path("./raffle.log"), level=logging.INFO)
 
 
 class RaffleBackend:
@@ -17,7 +17,7 @@ class RaffleBackend:
         self.exclude_list = []
         self.pick_hist = []
         self.winner = None
-        self.savepath = Path(__file__).parent / "raffle_memory.txt"
+        self.savepath = Path("./raffle_memory.txt")
 
     def save_data(self) -> None:
         with open(self.savepath, "w") as file:
@@ -82,6 +82,7 @@ class RaffleBackend:
         else:
             last_pick = self.pick_hist.pop()
             self.score[last_pick]["count"] -= 1
+            logging.info(f"Removed last entry: {last_pick.capitalize()}")
             info = f"Removed last entry: {last_pick.capitalize()}"
         return info
 
@@ -158,9 +159,9 @@ class RaffleGUI:
         return button
 
     def button_setup(self) -> None:
-        raffle_img = tk.PhotoImage(file=Path(__file__).parent / "pics/pick_winner.png")
-        undo_img = tk.PhotoImage(file=Path(__file__).parent / "pics/undo.png")
-        config_img = tk.PhotoImage(file=Path(__file__).parent / "pics/config.png")
+        raffle_img = tk.PhotoImage(file=Path("./pics/pick_winner.png"))
+        undo_img = tk.PhotoImage(file=Path("./pics/undo.png"))
+        config_img = tk.PhotoImage(file=Path("./pics/config.png"))
 
         self.button_row = tk.Frame(self.master, background="white")
         self.button_row.pack(side="top", pady=10)
@@ -396,8 +397,8 @@ class ConfigPopup:
         return button
 
     def button_setup(self) -> None:
-        plus_img = tk.PhotoImage(file=Path(__file__).parent / "pics/plus.png")
-        minus_img = tk.PhotoImage(file=Path(__file__).parent / "pics/minus.png")
+        plus_img = tk.PhotoImage(file=Path("./pics/plus.png"))
+        minus_img = tk.PhotoImage(file=Path("./pics/minus.png"))
         self.button_row = tk.Frame(self.popup, background="white")
         self.add_button = self._button(
             owner = self.button_row,

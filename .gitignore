@@ -134,3 +134,6 @@ dmypy.json
 # Config and log files
 raffle_memory.txt
 raffle.log
+
+# builds and such
+extras

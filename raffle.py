@@ -5,6 +5,7 @@ from ctypes import windll
 import json
 from pathlib import Path
 import logging
+from typing import Callable
 
 logging.basicConfig(filename=Path("./raffle.log"), level=logging.INFO)
 
@@ -94,7 +95,7 @@ class RaffleBackend:
 
 
 class RaffleGUI:
-    def __init__(self, master) -> None:
+    def __init__(self, master:tk.Tk) -> None:
         self.master = master
 
         self.visual_setup()
@@ -141,7 +142,7 @@ class RaffleGUI:
         self.label.bind("<B1-Motion>", self.on_drag_window)
 
     @staticmethod
-    def _button(owner, command, image=None, background="white") -> tk.Button:
+    def _button(owner, command:Callable, image:tk.PhotoImage=None, background:str="white") -> tk.Button:
         button = tk.Button(
             owner,
             relief="flat",
@@ -238,36 +239,36 @@ class RaffleGUI:
     def draw(self) -> None:
         if self.popup_ref:
             self.popup_ref.get_changes_from_table()
-        time = 2250
-        self.create_suspense_with_names(time)
+        milliseconds = 2250
+        self.create_suspense_with_names(milliseconds)
         if self.popup_ref:
             self.popup_ref.get_changes_from_table()
-        self.master.after(time, self.pick_winner)
+        self.master.after(milliseconds, self.pick_winner)
 
-    def pick_winner(self) -> str:
+    def pick_winner(self) -> None:
         winner = self.backend.pick_winner()
         self.label_text.set(f"The winner is {winner}!")
         if self.popup_ref:
             self.popup_ref.refresh_popup()
         logging.info(f"The winner is {winner}!")
 
-    def create_suspense_with_dots(self, time) -> None:
-        step = int(time / 9)
-        for millis in range(0, time, step):
+    def create_suspense_with_dots(self, milliseconds:int) -> str:
+        step = int(milliseconds / 9)
+        for millis in range(0, milliseconds, step):
             dots = "".join(["."] * int((millis / step) % 3 + 1))
             info = f"The winner is {dots}"
             self.master.after(millis, self.label_text.set, info)
         return info
 
-    def create_suspense_with_names(self, time) -> None:
-        step = int(time / 30)
-        for i, millis in enumerate(range(0, time, step)):
+    def create_suspense_with_names(self, milliseconds:int) -> str:
+        step = int(milliseconds / 30)
+        for i, millis in enumerate(range(0, milliseconds, step)):
             names = [key.capitalize() for key in self.backend.score.keys()]
             info = f"The winner is {choice(names)}"
             self.master.after(millis, self.label_text.set, info)
         return info
 
-    def undo(self) -> dict:
+    def undo(self) -> None:
         info = self.backend.undo_pick()
         if self.popup_ref:
             self.popup_ref.refresh_popup()
@@ -280,7 +281,7 @@ class RaffleGUI:
 
 
 class ConfigPopup:
-    def __init__(self, supernamespace, master) -> None:
+    def __init__(self, supernamespace, master:tk.Tk) -> None:
         self.master = master
         self.supernamespace = supernamespace
         self.popup = tk.Toplevel(self.master)
@@ -379,7 +380,7 @@ class ConfigPopup:
         return entries
 
     @staticmethod
-    def _button(owner, command, image=None, background="white") -> tk.Button:
+    def _button(owner, command: Callable, image:tk.PhotoImage=None, background:str="white") -> tk.Button:
         button = tk.Button(
             owner,
             relief="flat",

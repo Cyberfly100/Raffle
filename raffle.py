@@ -1,5 +1,5 @@
 #%%
-from random import choice
+from secrets import choice
 import tkinter as tk
 from ctypes import windll
 import json
